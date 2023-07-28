@@ -1497,7 +1497,7 @@ class Shell(cmd.Cmd):
                 self.print_recreate_keyspace(k, sys.stdout)
                 print('')
 
-    def do_describe(self, parsed):
+    def do_describe(self, parsed, client_side=False):
 
         """
         DESCRIBE [cqlsh only]
@@ -1589,7 +1589,7 @@ class Shell(cmd.Cmd):
           where object can be either a keyspace or a table or an index or a materialized
           view (in this order).
         """
-        if self.connection_versions['build'][0] < '4':
+        if client_side:
             what = parsed.matched[1][1].lower()
             if what == 'functions':
                 self.describe_functions_client(self.current_keyspace)
@@ -1665,6 +1665,10 @@ class Shell(cmd.Cmd):
                 elif what:
                     self.describe_element(result)
 
+            except cassandra.protocol.SyntaxException:
+                # Server doesn't support DESCRIBE query, retry with 
+                # client-side DESCRIBE implementation
+                self.do_describe(parsed, client_side=True)
             except CQL_ERRORS as err:
                 err_msg = err.message if hasattr(err, 'message') else str(err)
                 self.printerr(err_msg.partition("message=")[2].strip('"'))
