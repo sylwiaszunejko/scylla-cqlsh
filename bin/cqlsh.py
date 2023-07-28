@@ -1497,7 +1497,7 @@ class Shell(cmd.Cmd):
                 self.print_recreate_keyspace(k, sys.stdout)
                 print('')
 
-    def do_describe(self, parsed):
+    def do_describe(self, parsed, client_side=False):
 
         """
         DESCRIBE [cqlsh only]
