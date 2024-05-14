@@ -668,7 +668,7 @@ class TestCqlshOutput(BaseTestCase):
                 varintcol varint
             ) WITH additional_write_policy = '99p'
                 AND bloom_filter_fp_chance = 0.01
-                AND caching = {'keys': 'ALL', 'rows_per_partition': 'NONE'}
+                AND caching = {'keys': 'ALL','rows_per_partition': 'NONE'}
                 AND cdc = false
                 AND comment = ''
                 AND compaction = {'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy', 'max_threshold': '32', 'min_threshold': '4'}
@@ -686,7 +686,7 @@ class TestCqlshOutput(BaseTestCase):
 
         scylla_table_desc = dedent("""
             CREATE TABLE %s.has_all_types (
-                num int PRIMARY KEY,
+                num int,
                 asciicol ascii,
                 bigintcol bigint,
                 blobcol blob,
@@ -701,21 +701,24 @@ class TestCqlshOutput(BaseTestCase):
                 tinyintcol tinyint,
                 uuidcol uuid,
                 varcharcol text,
-                varintcol varint
+                varintcol varint,
+                PRIMARY KEY (num)
             ) WITH bloom_filter_fp_chance = 0.01
-                AND caching = {'keys': 'ALL', 'rows_per_partition': 'ALL'}
+                AND caching = {'keys': 'ALL','rows_per_partition': 'ALL'}
                 AND comment = ''
                 AND compaction = {'class': 'SizeTieredCompactionStrategy'}
                 AND compression = {'sstable_compression': 'org.apache.cassandra.io.compress.LZ4Compressor'}
-                AND crc_check_chance = 1.0
-                AND dclocal_read_repair_chance = 0.0
+                AND crc_check_chance = 1
+                AND dclocal_read_repair_chance = 0
                 AND default_time_to_live = 0
                 AND gc_grace_seconds = 864000
                 AND max_index_interval = 2048
                 AND memtable_flush_period_in_ms = 0
                 AND min_index_interval = 128
-                AND read_repair_chance = 0.0
-                AND speculative_retry = '99.0PERCENTILE';
+                AND read_repair_chance = 0
+                AND speculative_retry = '99.0PERCENTILE'
+                AND paxos_grace_seconds = 864000
+                AND tombstone_gc = {'mode':'timeout','propagation_delay_in_seconds':'3600'};
                 """ % quote_name(get_keyspace()))
 
         if self.is_scylla:
@@ -792,8 +795,9 @@ class TestCqlshOutput(BaseTestCase):
         output_re_client = r'''(?x)
             ^
             \n
-            Cluster: [ ] (?P<clustername> .* ) \n
-            Partitioner: [ ] (?P<partitionername> .* ) \n
+            Cluster: [ ] (?P<clustername> .* )\n
+            Partitioner: [ ] (?P<partitionername> .* )\n
+            Snitch: [ ] (?P<snitchname> .* )\n
             \n
         '''
 
@@ -997,23 +1001,25 @@ class TestCqlshOutput(BaseTestCase):
 
         expected = dedent(f"""
         CREATE TABLE {ks}.ccc (
-            pkey int PRIMARY KEY
+            pkey int,
+            PRIMARY KEY (pkey)
         ) WITH bloom_filter_fp_chance = 0.01
-            AND caching = {{'keys': 'ALL', 'rows_per_partition': 'ALL'}}
+            AND caching = {{'keys': 'ALL','rows_per_partition': 'ALL'}}
             AND comment = ''
             AND compaction = {{'class': 'SizeTieredCompactionStrategy'}}
             AND compression = {{'sstable_compression': 'org.apache.cassandra.io.compress.LZ4Compressor'}}
-            AND crc_check_chance = 1.0
-            AND dclocal_read_repair_chance = 0.0
+            AND crc_check_chance = 1
+            AND dclocal_read_repair_chance = 0
             AND default_time_to_live = 0
             AND gc_grace_seconds = 864000
             AND max_index_interval = 2048
             AND memtable_flush_period_in_ms = 0
             AND min_index_interval = 128
-            AND read_repair_chance = 0.0
-            AND speculative_retry = '99.0PERCENTILE';
-        
-        cdc = {{'delta': 'full', 'enabled': 'true', 'postimage': 'false', 'preimage': 'false', 'ttl': '86400'}}
+            AND read_repair_chance = 0
+            AND speculative_retry = '99.0PERCENTILE'
+            AND paxos_grace_seconds = 864000
+            AND tombstone_gc = {{'mode':'timeout','propagation_delay_in_seconds':'3600'}}
+            AND cdc = {{"delta":"full","enabled":"true","postimage":"false","preimage":"false","ttl":"86400"}};
         """)
 
         with testrun_cqlsh(tty=True, env=self.default_env) as c:
