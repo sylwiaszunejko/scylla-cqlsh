@@ -1660,6 +1660,7 @@ class Shell(cmd.Cmd):
                 what = parsed.matched[1][1].lower()
 
                 if what in ('columnfamilies', 'tables', 'types', 'functions', 'aggregates'):
+                    print(result)
                     self.describe_list(result)
                 elif what == 'keyspaces':
                     self.describe_keyspaces(result)
@@ -1702,7 +1703,8 @@ class Shell(cmd.Cmd):
         keyspace = None
         names = list()
         for row in rows:
-            if row['keyspace_name'] != keyspace:
+            print(row)
+            if row[0] != keyspace:
                 if keyspace is not None:
                     self.print_keyspace_element_names(keyspace, names)
 
